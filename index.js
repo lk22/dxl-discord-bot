@@ -27,13 +27,17 @@ const client = new Client({
 });
 
 client.on('ready', () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+  webhookClient.send('DXL bot is online');
 });
 
-webhookClient.send('DXL bot is online');
 
 const app = express();
 app.use(parser.json());
+
+
+app.listen(3000, () => {
+  console.log("Logged in as DXL Bot!");
+});
 
 app.post('/discord', (req, res) => {
   console.log(req.body);
@@ -41,13 +45,11 @@ app.post('/discord', (req, res) => {
   // send the message to the webhook client with the message content
   const { content } = req.body;
   webhookClient.send(content);
-
+  
   return res.status(200).send('OK');
 })
 
-app.listen(3000, () => {
-  console.log('Server is listening on port 3000');
-});
+
 
 client.on('messageCreate', async message => {
   if (message.content === '!ping') {
