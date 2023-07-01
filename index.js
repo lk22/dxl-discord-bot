@@ -35,7 +35,7 @@ const app = express();
 app.use(parser.json());
 
 
-app.listen(3000, () => {
+app.listen(process.env.DXL_DISCORD_BOT_PORT, () => {
   console.log("Logged in as DXL Bot!");
 });
 
@@ -61,7 +61,6 @@ client.on('messageCreate', async message => {
     axios.get('http://localhost:8888/dxl-v2/wp-json/dxl/api/v1/event/list')
     .then(function (response) {
       console.log(response.data.data.response.events.lan)
-      
     })
   }
 
