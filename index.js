@@ -12,6 +12,8 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
+const utilities = require('./utils.js');
+
 const app = express();
 app.use(parser.json());
 
@@ -82,43 +84,37 @@ for (const file of commandFiles) {
   }
 }
 
+// load interaction create event
 client.on('interactionCreate', async interaction => {
-  if ( ! interaction.isChatInputCommand()) return false;
-
-  if (interaction.isAutocomplete()) {
-    const command = interaction.client.commands.get(interaction.commandName);
-
-    if ( ! command ) {
-      console.log(`[WARNING] The command ${interaction.commandName} does not exist`);
-      return false;
-    }
-
-    try {
-      await command.execute(interaction);
-    } catch(error) {
-      console.error(error);
-    }
-  }
+  await utilities.checkChatInputCommandInteraction(interaction);
+  await utilities.checkIsAutocompleteInteraction(interaction);
 })
 
+// show greeting message from bot when invited to a server
+client.on('guildCreate', async guild => {
+  console.log(`Joined ${guild.name} as ${client.user.tag}`);
+  // send the message to the webhook client with the message content
+  webhookClient.send(`Hej ${guild.name}! Jeg er DXL Bot og jeg er her for at hjælpe dig med at finde rundt på serveren. \n\n
+    Hvis du har brug for hjælp, så skriv /help i en af kanalerne og jeg vil hjælpe dig. \n\n
+    Hvis du har spørgsmål, så skriv til en af vores admins eller moderatorer. \n\n`
+  );
+})
+
+// notify when a new member joins the server
+client.on('guildMemberAdd', async member => {
+  // send the message to the webhook client with the message content
+  webhookClient.send(
+    `Velkommen til Danish Xbox League's Discord Server ${member.user.username}!\n\n 
+    Jeg er DXL Bot og jeg er her for at hjælpe dig med at finde rundt på serveren. \n\n 
+    Hvis du har brug for hjælp, så skriv /help i en af kanalerne og jeg vil hjælpe dig. \n\n 
+    Hvis du har spørgsmål, så skriv til en af vores admins eller moderatorer. \n\n 
+    Hvis du vil invitere dine venner til serveren, så skriv /invite i en af kanalerne og jeg vil generere et link til dig. \n\n`
+  )
+});
+
 client.on('messageCreate', async message => {
-  // if the message starts with DXL and the bot is not the author
-  if ( message.content.startsWith('/') && !message.author.bot ) {
-    // split the message into an array of words
-    const args = message.content.split(' ');
-
-    // remove the second word from the array and store it in the command variable
-    const command = args.shift().slice(1);
-
-    if ( command ) {
-      const commandFile = client.commands.get(command);
-      commandFile.execute(message, args)
-    } else {
-      await message.reply({
-        content: 'Jeg forstår ikke hvad du mener, prøv at skrive /help for at se en liste over kommandoer'
-      });
-    }
-  }
+  // auto suggest commands when the user types /
+  await utilities.triggerChatCommand(message, client, WebhookClient);
 });
 
 client.login(process.env.DXL_DISCORD_BOT_TOKEN);
